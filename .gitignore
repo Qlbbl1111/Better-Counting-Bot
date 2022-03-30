@@ -153,3 +153,4 @@ cython_debug/
 .DS_Store
 bot_token.py
 discord.log
+.evn
