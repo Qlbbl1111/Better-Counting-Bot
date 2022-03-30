@@ -154,3 +154,4 @@ cython_debug/
 bot_token.py
 discord.log
 .evn
+guildfiles/

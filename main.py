@@ -1,11 +1,10 @@
 from dotenv import load_dotenv
-import discord, json, os, logging, time, re, string
+import discord, json, os, logging, time, re, string, os.path
 from discord.ext import commands, tasks
-from make_files import firstrun, joinguild
+from make_files import firstrun
 
 #Program Variables
 dir = os.path.dirname(__file__)
-firstnum = 0
 channel_id = '958404891301269544'
 
 #Program Functions
@@ -15,11 +14,60 @@ if os.path.isdir('./guildfiles') == True:
 else:
     firstrun()
 
+def joinguild(guild):
+    if os.path.exists(f'./guildfiles/{guild}.json') == True:
+        return
+    else:
+        with open(f'./guildfiles/{guild}.json', 'w') as f:
+            f.write(f"{{\"id\": {guild}, \"highscore\": 0, \"channel\": 0, \"currentnum\": 0}}")
+            print('ran')
+            return
+
 def eval_expression(input_string):
     code = compile(input_string, "<string>", "eval")
     if code.co_names:
         raise NameError(f"Use of names not allowed")
     return eval(code, {"__builtins__": {}}, {})
+
+def updatehighscore(score, guild):
+    with open(f'./guildfiles/{guild}.json', 'r') as f:
+        x = json.loads(f.read())
+        x.update({"highscore": score})
+        y = json.dumps(x)
+    with open(f'./guildfiles/{guild}.json', 'w') as f:
+        f.write(y)
+
+def updatechannelid(channelid, guild):
+    with open(f'./guildfiles/{guild}.json', 'r') as f:
+        x = json.loads(f.read())
+        x.update({"channel": channelid})
+        y = json.dumps(x)
+    with open(f'./guildfiles/{guild}.json', 'w') as f:
+        f.write(y)
+
+def loadnumber(guild):
+    with open(f'./guildfiles/{guild}.json', 'r') as f:
+        x = json.loads(f.read())
+        y = x["currentnum"]
+        return y
+
+def updatenumber(number, guild):
+    with open(f'./guildfiles/{guild}.json', 'r') as f:
+        x = json.loads(f.read())
+        x.update({"currentnum": number})
+        y = json.dumps(x)
+    with open(f'./guildfiles/{guild}.json', 'w') as f:
+        f.write(y)
+def getchannel(guild):
+    with open(f'./guildfiles/{guild}.json', 'r') as f:
+        x = json.loads(f.read())
+        y = x["channel"]
+        return y
+def getguild():
+    with open(f'./guildfiles/{guild}.json', 'r') as f:
+        x = json.loads(f.read())
+        y = x["id"]
+        return y
 
 # Discord Variables
 activity = discord.Activity(type=discord.ActivityType.listening, name="+help")
@@ -49,8 +97,6 @@ bot.remove_command("help") #For custom help command
 @bot.event
 async def on_ready():  # When the bot is ready
     print(f"{bot.user} Started.")
-    firstnum = 0
-    print(firstnum)
 
 
 #EVENTS
@@ -58,45 +104,71 @@ async def on_ready():  # When the bot is ready
 @bot.event
 async def on_guild_join(guild):
     joinguild(guild.id)
+    return
 
-'''
+
 #removes guild settings
 @bot.event
 async def on_guild_remove(guild):
     pass
-'''
+
 
 #Message respond event
 @bot.listen('on_message')
 async def on_message(message):
+#make sure it was sent by human
     if (message.author.bot):
         return
-    if isinstance(message.channel, discord.channel.DMChannel):
+#check if it was sent in counting channel.
+    _id = getchannel(message.guild.id)
+    if message.channel.id != _id:
         return
-    channel = bot.get_channel(958404891301269544)
+#set vars
+    channel = bot.get_channel(_id)
     msg = message.content
     msg = msg.split()
     msg = msg[0]
-    global firstnum
-    firstnum = firstnum
+#fetch the current number
+    currentnum = loadnumber(message.guild.id)
+#try to eval the number
     try:
         num = eval_expression(msg)
     except:
         return
+#check if it counting restarted
+    if currentnum == 0 and num > 1 or num <= 0:
+        await message.add_reaction('\N{WARNING SIGN}')
+        await message.reply("First Number is 1", mention_author=False)
+        return
+
+#check if it is the right number
+    if num == currentnum + 1:
+        await message.add_reaction('\N{THUMBS UP SIGN}')
+    #update highscore if the number reached is bigger then the current highscore
+        with open(f'./guildfiles/{message.guild.id}.json', 'r') as f:
+            x = json.loads(f.read())
+            y = x["highscore"]
+            if y < currentnum + 1:
+                updatehighscore(currentnum + 1, message.guild.id)
+                updatenumber(currentnum + 1, message.guild.id)
+            else:
+                updatenumber(currentnum + 1, message.guild.id)
+#not the right number
     else:
-        if firstnum == 0 and num > 1 or num <= 0:
-            await message.add_reaction('\N{WARNING SIGN}')
-            await message.reply("First Number is 1", mention_author=False)
-            return
-        if num == firstnum + 1:
-            firstnum = firstnum + 1
-            print(f"Yes: {firstnum}")
-            await message.add_reaction('\N{THUMBS UP SIGN}')
-        else:
-            print(f"No: {firstnum}")
-            await message.add_reaction('\N{THUMBS DOWN SIGN}')
-            await channel.send(f"{message.author.mention} ruied it at {firstnum}")
-            firstnum = 0
+    #update the number
+
+        await message.add_reaction('\N{THUMBS DOWN SIGN}')
+        await channel.send(f"{message.author.mention} ruied it at {currentnum}.\n\nThe nxt number is 1.")
+
+    #update highscore if the number reached is bigger then the current highscore
+        with open(f'./guildfiles/{message.guild.id}.json', 'r') as f:
+            x = json.loads(f.read())
+            y = x["highscore"]
+            if y < currentnum:
+                updatehighscore(currentnum, message.guild.id)
+                updatenumber(0, message.guild.id)
+            else:
+                updatenumber(0, message.guild.id)
 
 
 #COMMANDS
@@ -136,12 +208,25 @@ async def help(ctx):
 #highscore command
 @bot.command()
 async def highscore(ctx):
-    pass
+    with open(f'./guildfiles/{ctx.guild.id}.json', 'r') as f:
+        x = json.loads(f.read())
+        y = x["highscore"]
+        await ctx.send(f"Your guild highscore is {y}!")
+        return
+
 #Set counting channel command
 @bot.command()
-async def channel(ctx, channel: discord.TextChannel):
-    pass
+async def channel(ctx, channel: discord.TextChannel=None):
+    if channel is None:
+        updatechannelid(ctx.channel.id, ctx.guild.id)
+        await ctx.send("Updated counting channel!")
+    updatechannelid(channel.id, ctx.guild.id)
+    await ctx.send("Updated counting channel!")
 
+@channel.error
+async def channel_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        await ctx.send('Command format is: +channel #countingchannel')
 
 #RUN
 if __name__ == "__main__":
