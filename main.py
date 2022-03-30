@@ -5,6 +5,8 @@ from make_files import firstrun, joinguild
 
 #Program Variables
 dir = os.path.dirname(__file__)
+firstnum = 0
+channel_id = '958404891301269544'
 
 #Program Functions
 load_dotenv(os.path.join(dir, ".env"))
@@ -12,6 +14,12 @@ if os.path.isdir('./guildfiles') == True:
     pass
 else:
     firstrun()
+
+def eval_expression(input_string):
+    code = compile(input_string, "<string>", "eval")
+    if code.co_names:
+        raise NameError(f"Use of names not allowed")
+    return eval(code, {"__builtins__": {}}, {})
 
 # Discord Variables
 activity = discord.Activity(type=discord.ActivityType.listening, name="+help")
@@ -41,6 +49,8 @@ bot.remove_command("help") #For custom help command
 @bot.event
 async def on_ready():  # When the bot is ready
     print(f"{bot.user} Started.")
+    firstnum = 0
+    print(firstnum)
 
 
 #EVENTS
@@ -57,17 +67,36 @@ async def on_guild_remove(guild):
 '''
 
 #Message respond event
-@bot.event
+@bot.listen('on_message')
 async def on_message(message):
-    msg = message.content
     if (message.author.bot):
         return
     if isinstance(message.channel, discord.channel.DMChannel):
         return
-        
-
-        await message.reply(r, mention_author=False)
+    channel = bot.get_channel(958404891301269544)
+    msg = message.content
+    msg = msg.split()
+    msg = msg[0]
+    global firstnum
+    firstnum = firstnum
+    try:
+        num = eval_expression(msg)
+    except:
+        return
     else:
+        if firstnum == 0 and num > 1 or num <= 0:
+            await message.add_reaction('\N{WARNING SIGN}')
+            await message.reply("First Number is 1", mention_author=False)
+            return
+        if num == firstnum + 1:
+            firstnum = firstnum + 1
+            print(f"Yes: {firstnum}")
+            await message.add_reaction('\N{THUMBS UP SIGN}')
+        else:
+            print(f"No: {firstnum}")
+            await message.add_reaction('\N{THUMBS DOWN SIGN}')
+            await channel.send(f"{message.author.mention} ruied it at {firstnum}")
+            firstnum = 0
 
 
 #COMMANDS
