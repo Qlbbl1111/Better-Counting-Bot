@@ -97,12 +97,12 @@ async def on_message(message):
                 updatenumber(currentnum + 1, message.guild.id)
             else:
                 updatenumber(currentnum + 1, message.guild.id)
-#not the right number
+    #not the right number
     else:
     #update the number
 
         await message.add_reaction('\N{THUMBS DOWN SIGN}')
-        await channel.send(f"{message.author.mention} ruied it at {currentnum}.\n\nThe nxt number is 1.")
+        await channel.send(f"{message.author.mention} ruied it at {currentnum}.\n\nThe next number is 1.")
 
     #update highscore if the number reached is bigger then the current highscore
         with open(f'./guildfiles/{message.guild.id}.json', 'r') as f:
