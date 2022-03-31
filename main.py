@@ -87,7 +87,7 @@ async def on_message(message):
 
 #check if it is the right number
     if num == currentnum + 1:
-        await message.add_reaction('\N{THUMBS UP SIGN}')
+        await message.add_reaction('✅')
     #update highscore if the number reached is bigger then the current highscore
         with open(f'./guildfiles/{message.guild.id}.json', 'r') as f:
             x = json.loads(f.read())
@@ -101,7 +101,7 @@ async def on_message(message):
     else:
     #update the number
 
-        await message.add_reaction('\N{THUMBS DOWN SIGN}')
+        await message.add_reaction('❌')
         await channel.send(f"{message.author.mention} ruied it at {currentnum}.\n\nThe next number is 1.")
 
     #update highscore if the number reached is bigger then the current highscore
