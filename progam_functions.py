@@ -1,4 +1,9 @@
-import json, os, logging, time, re, string, os.path
+import json, os, logging, time, re, string, os
+from datetime import datetime
+
+
+def diff_dates(date1, date2):
+    return abs(date2-date1).days
 
 
 def firstrun():
@@ -10,7 +15,7 @@ def joinguild(guild):
         return
     else:
         with open(f'./guildfiles/{guild}.json', 'w') as f:
-            f.write(f"{{\"id\": {guild}, \"highscore\": 0, \"channel\": 0, \"currentnum\": 0}}")
+            f.write(f"{{\"id\": {guild}, \"highscore\": 0, \"channel\": 0, \"currentnum\": 0, \"date\": \"\"}}")
             print('ran')
             return
 
@@ -23,9 +28,21 @@ def eval_expression(input_string):
 
 
 def updatehighscore(score, guild):
+    highscoredate(guild)
     with open(f'./guildfiles/{guild}.json', 'r') as f:
         x = json.loads(f.read())
         x.update({"highscore": score})
+        y = json.dumps(x)
+    with open(f'./guildfiles/{guild}.json', 'w') as f:
+        f.write(y)
+
+
+def highscoredate(guild):
+    _today = datetime.today()
+    _today= datetime.strftime(_today, '%b-%d-%Y')
+    with open(f'./guildfiles/{guild}.json', 'r') as f:
+        x = json.loads(f.read())
+        x.update({"date": f"{_today}"})
         y = json.dumps(x)
     with open(f'./guildfiles/{guild}.json', 'w') as f:
         f.write(y)
@@ -38,6 +55,22 @@ def updatechannelid(channelid, guild):
         y = json.dumps(x)
     with open(f'./guildfiles/{guild}.json', 'w') as f:
         f.write(y)
+
+
+def loaddate(guild):
+    with open(f'./guildfiles/{guild}.json', 'r') as f:
+        x = json.loads(f.read())
+        y = x["date"]
+
+    _today = datetime.today()
+    hsdate = datetime.strptime(y, '%b-%d-%Y')
+    date = datetime.strftime(hsdate, '%b-%d-%Y')
+    days = diff_dates(_today, hsdate)
+    if days == 0:
+        z = f"Today"
+    else:
+        z = f"{days} days ago, on {date}"
+    return z
 
 
 def loadnumber(guild):

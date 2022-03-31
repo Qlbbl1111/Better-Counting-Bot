@@ -142,8 +142,8 @@ async def help(ctx):
           "value": "Used to set the channel to count in."
         },
         {
-          "name": f"{prefix}highscore",
-          "value": "Used to view your guilds highest count."
+          "name": f"{prefix}stats",
+          "value": "Used to view your guilds stats."
         }
       ]
     }
@@ -151,26 +151,91 @@ async def help(ctx):
 
 #highscore command
 @bot.command()
-async def highscore(ctx):
+async def stats(ctx):
+    currentnum = loadnumber(ctx.guild.id)
+    date = loaddate(ctx.guild.id)
     with open(f'./guildfiles/{ctx.guild.id}.json', 'r') as f:
         x = json.loads(f.read())
-        y = x["highscore"]
-        await ctx.send(f"Your guild highscore is {y}!")
-        return
+        highscore = x["highscore"]
+
+    await ctx.send(content=None, embed=discord.Embed.from_dict(
+    {
+      "title": f"Guild Stats",
+      "color": 0,
+      "description": "",
+      "timestamp": "",
+      "author": {
+        "name": "",
+        "icon_url": ""
+      },
+      "image": {},
+      "thumbnail": {},
+      "footer": {},
+      "fields": [
+        {
+          "name": "Highest Count:",
+          "value": f"{highscore}"
+        },
+                {
+          "name": "Date Achieved:",
+          "value": f"{date}"
+        },
+                {
+          "name": "Current Count:",
+          "value": f"{currentnum}"
+        },        
+
+      ]
+    }
+  ))
 
 #Set counting channel command
 @bot.command()
 async def channel(ctx, channel: discord.TextChannel=None):
     if channel is None:
         updatechannelid(ctx.channel.id, ctx.guild.id)
-        await ctx.send("Updated counting channel!")
-    updatechannelid(channel.id, ctx.guild.id)
-    await ctx.send("Updated counting channel!")
+        channel = ctx.channel.mention
+    else:
+        updatechannelid(channel.id, ctx.guild.id)
+        channel = channel.mention
+
+    await ctx.send(content=None, embed=discord.Embed.from_dict(
+    {
+      "title": "Updated Counting Channel",
+      "color": 0,
+      "description": f"Counting now happens in {channel}.",
+      "timestamp": "",
+      "author": {
+        "name": "",
+        "icon_url": ""
+      },
+      "image": {},
+      "thumbnail": {},
+      "footer": {},
+      "fields": []
+    }
+  ))
 
 @channel.error
 async def channel_error(ctx, error):
     if isinstance(error, commands.BadArgument):
-        await ctx.send('Command format is: +channel #countingchannel')
+        await ctx.send(content=None, embed=discord.Embed.from_dict(
+    {
+      "title": "Error: BadArgument",
+      "color": 0,
+      "description": "Command format is: +channel #<the channel you want to count in>",
+      "timestamp": "",
+      "author": {
+        "name": "",
+        "icon_url": ""
+      },
+      "image": {},
+      "thumbnail": {},
+      "footer": {},
+      "fields": []
+    }
+  ))
+ 
 
 #RUN
 if __name__ == "__main__":
