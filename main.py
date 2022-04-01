@@ -151,6 +151,45 @@ async def on_message(message):
         updatenumber(0, message.guild.id)
         return
 
+@bot.event
+async def on_message_delete(message):
+    checkfiles(message.guild.id)
+    currentnum = loadnumber(message.guild.id)
+    _id = getchannel(message.guild.id)
+    channel = bot.get_channel(_id)
+    user = loaduser(message.guild.id)
+    msg = message.content
+    msg = msg.split()
+    msg = msg[0]
+    if (message.author.bot):
+        return
+
+    if message.channel.id != _id:
+        return
+
+    try:
+        num = eval_expression(msg)
+    except:
+        return
+
+    channel = bot.get_channel(_id)
+    msg = f'**{message.author.mention} deleted their count of {num}.**'
+    await channel.send(content=msg, embed=discord.Embed.from_dict(
+    {
+      "title": "The next number is:",
+      "color": 16777215,
+      "description": f"```{currentnum + 1}```",
+      "timestamp": "",
+      "author": {
+        "name": "",
+        "icon_url": ""
+      },
+      "image": {},
+      "thumbnail": {},
+      "footer": {},
+      "fields": []
+    }
+  ))
 
 #COMMANDS
 #help command
