@@ -117,7 +117,7 @@ async def on_message(message):
         else:
             await message.add_reaction('❌')
             updateuser(0, message.guild.id)
-            await channel.send(f"{message.author.mention} ruied it at {currentnum}! You can't count two numbers in a row! The next number is 1.")
+            await channel.send(f"{message.author.mention} ruined it at {currentnum}! You can't count two numbers in a row! The next number is 1.")
             updatenumber(0, message.guild.id)
             return
     else:
@@ -147,7 +147,7 @@ async def on_message(message):
         updateuser(0, message.guild.id)
         await message.add_reaction('❌')
         updateuser(0, message.guild.id)
-        await channel.send(f"{message.author.mention} ruied it at {currentnum}! WRONG NUMBER! The next number is 1.")
+        await channel.send(f"{message.author.mention} ruined it at {currentnum}! WRONG NUMBER! The next number is 1.")
         updatenumber(0, message.guild.id)
         return
 
