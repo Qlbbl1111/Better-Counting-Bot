@@ -60,65 +60,103 @@ async def on_guild_remove(guild):
 #Message respond event
 @bot.listen('on_message')
 async def on_message(message):
-#make sure it was sent by human
-    if (message.author.bot):
-        return
-#check if it was sent in counting channel.
+    #set vars
+    checkfiles(message.guild.id)
+    currentnum = loadnumber(message.guild.id)
     _id = getchannel(message.guild.id)
-    if message.channel.id != _id:
-        return
-#set vars
     channel = bot.get_channel(_id)
+    user = loaduser(message.guild.id)
     msg = message.content
     msg = msg.split()
     msg = msg[0]
-#fetch the current number
-    currentnum = loadnumber(message.guild.id)
-#try to eval the number
+
+    #1. Check to see if it was sent by a human.
+    if (message.author.bot):
+        return
+
+    #2. Check to see if it was sent in the right channel
+    if message.channel.id != _id:
+        return
+
+    #3. Check to see if it is a number
     try:
         num = eval_expression(msg)
     except:
         return
-#check if it counting restarted
-    if currentnum == 0 and num > 1 or num <= 0:
+
+    #4. Check if the counting resarted
+    #if they miscount at 0
+    if currentnum == 0 and num != 1:
         await message.add_reaction('\N{WARNING SIGN}')
         await message.reply("First Number is 1", mention_author=False)
         return
-
-#check if it is the right number
-    if num == currentnum + 1:
-        await message.add_reaction('✅')
-    #update highscore if the number reached is bigger then the current highscore
+    #if they correctly count at 0
+    if currentnum == 0 and num == 1:
+    #check if the number reached is bigger then the current highscore
         with open(f'./guildfiles/{message.guild.id}.json', 'r') as f:
             x = json.loads(f.read())
             y = x["highscore"]
+            #update highscore and react yes
             if y < currentnum + 1:
                 updatehighscore(currentnum + 1, message.guild.id)
                 updatenumber(currentnum + 1, message.guild.id)
+                updateuser(message.author.id, message.guild.id)
+                await message.add_reaction('☑️')
+                return
+            #react yes
             else:
                 updatenumber(currentnum + 1, message.guild.id)
-    #not the right number
+                updateuser(message.author.id, message.guild.id)
+                await message.add_reaction('✅')
+                return
+
+    #5. Check to see if it was sent by the same user as last time
+    if message.author.id == user:
+        if currentnum == 0:
+            pass
+        else:
+            await message.add_reaction('❌')
+            updateuser(0, message.guild.id)
+            await channel.send(f"{message.author.mention} ruied it at {currentnum}! You can't count two numbers in a row! The next number is 1.")
+            updatenumber(0, message.guild.id)
+            return
     else:
-    #update the number
+        pass
 
-        await message.add_reaction('❌')
-        await channel.send(f"{message.author.mention} ruied it at {currentnum}.\n\nThe next number is 1.")
-
-    #update highscore if the number reached is bigger then the current highscore
+    #6. Check to see if the number sent is 1 more then the current number
+    if num == currentnum + 1:
+    #check if the number reached is bigger then the current highscore
         with open(f'./guildfiles/{message.guild.id}.json', 'r') as f:
             x = json.loads(f.read())
             y = x["highscore"]
-            if y < currentnum:
-                updatehighscore(currentnum, message.guild.id)
-                updatenumber(0, message.guild.id)
+            #update highscore and react yes
+            if y < currentnum + 1:
+                updatehighscore(currentnum + 1, message.guild.id)
+                updatenumber(currentnum + 1, message.guild.id)
+                updateuser(message.author.id, message.guild.id)
+                await message.add_reaction('☑️')
+                return
+            #react yes
             else:
-                updatenumber(0, message.guild.id)
+                updatenumber(currentnum + 1, message.guild.id)
+                updateuser(message.author.id, message.guild.id)
+                await message.add_reaction('✅')
+                return
+    #not the right number
+    else:
+        updateuser(0, message.guild.id)
+        await message.add_reaction('❌')
+        updateuser(0, message.guild.id)
+        await channel.send(f"{message.author.mention} ruied it at {currentnum}! WRONG NUMBER! The next number is 1.")
+        updatenumber(0, message.guild.id)
+        return
 
 
 #COMMANDS
 #help command
 @bot.command()
 async def help(ctx):
+    checkfiles(ctx.guild.id)
     await ctx.send(content=None, embed=discord.Embed.from_dict(
     {
       "title": "Better Counting Bot Help",
@@ -152,7 +190,9 @@ async def help(ctx):
 #highscore command
 @bot.command()
 async def stats(ctx):
+    checkfiles(ctx.guild.id)
     currentnum = loadnumber(ctx.guild.id)
+    user = loaduser(ctx.guild.id)
     date = loaddate(ctx.guild.id)
     with open(f'./guildfiles/{ctx.guild.id}.json', 'r') as f:
         x = json.loads(f.read())
@@ -160,7 +200,7 @@ async def stats(ctx):
 
     await ctx.send(content=None, embed=discord.Embed.from_dict(
     {
-      "title": f"Guild Stats",
+      "title": f"Guild Stats for `{ctx.guild.name}`",
       "color": 0,
       "description": "",
       "timestamp": "",
@@ -173,6 +213,14 @@ async def stats(ctx):
       "footer": {},
       "fields": [
         {
+          "name": "Current Count:",
+          "value": f"{currentnum}"
+        },        
+                {
+          "name": "Last Counted By:",
+          "value": f"<@{user}>"
+        }, 
+        {
           "name": "Highest Count:",
           "value": f"{highscore}"
         },
@@ -180,11 +228,6 @@ async def stats(ctx):
           "name": "Date Achieved:",
           "value": f"{date}"
         },
-                {
-          "name": "Current Count:",
-          "value": f"{currentnum}"
-        },        
-
       ]
     }
   ))
@@ -192,6 +235,7 @@ async def stats(ctx):
 #Set counting channel command
 @bot.command()
 async def channel(ctx, channel: discord.TextChannel=None):
+    checkfiles(ctx.guild.id)
     if channel is None:
         updatechannelid(ctx.channel.id, ctx.guild.id)
         channel = ctx.channel.mention
