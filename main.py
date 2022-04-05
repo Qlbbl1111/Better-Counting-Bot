@@ -151,6 +151,8 @@ async def on_message(message):
         updatenumber(0, message.guild.id)
         return
 
+
+#Check if message was deleted
 @bot.event
 async def on_message_delete(message):
     checkfiles(message.guild.id)
@@ -161,6 +163,7 @@ async def on_message_delete(message):
     msg = message.content
     msg = msg.split()
     msg = msg[0]
+
     if (message.author.bot):
         return
 
