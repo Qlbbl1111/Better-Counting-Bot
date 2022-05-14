@@ -2,17 +2,23 @@ from dotenv import load_dotenv
 import discord, json, os, logging, time, re, string, os.path
 from discord.ext import commands, tasks
 from progam_functions import *
+from leaderboard import *
 
 #Program Variables
 dir = os.path.dirname(__file__)
 
 #Program Functions
 load_dotenv(os.path.join(dir, ".env"))
-if os.path.isdir('./guildfiles') == True:
-    pass
-else:
-    firstrun()
 
+if os.path.isdir('./guildfiles') != True:
+    os.mkdir(os.path.join('./', 'guildfiles'))
+
+elif os.path.isdir('./leaderboard.json') != True:
+    with open(f'./leaderboard.json', 'w') as f:
+        f.write("{}")
+        
+else:
+    pass
 # Discord Variables
 activity = discord.Activity(type=discord.ActivityType.listening, name="+help")
 author_id = "892999941146963969"
@@ -29,7 +35,7 @@ logger.addHandler(handler)
 
 # Bot info
 bot = commands.Bot(
-    command_prefix="+",
+    command_prefix=prefix,
     case_insensitive=True,
     activity=activity,
     status=discord.Status.online

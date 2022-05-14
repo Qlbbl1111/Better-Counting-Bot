@@ -1,5 +1,6 @@
 import json, os, logging, time, re, string, os
 from datetime import datetime
+import math
 
 def checkfiles(guild):
     if os.path.isdir(f'./guildfiles/{guild}.json') == True:
@@ -11,16 +12,13 @@ def checkfiles(guild):
 def diff_dates(date1, date2):
     return abs(date2-date1).days
 
-def firstrun():
-    os.mkdir(os.path.join('./', 'guildfiles'))
-
 def joinguild(guild):
     if os.path.exists(f'./guildfiles/{guild}.json') == True:
         return
     else:
         with open(f'./guildfiles/{guild}.json', 'w') as f:
             f.write(f"{{\"id\": {guild}, \"highscore\": 0, \"channel\": 0, \"currentnum\": 0, \"currentuser\": 0, \"date\": \"\"}}")
-            return
+
 
 def eval_expression(input_string):
     code = compile(input_string, "<string>", "eval")
