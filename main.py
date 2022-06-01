@@ -238,6 +238,29 @@ async def help(ctx):
     }
   ))
 
+#test command
+@bot.command()
+async def test(ctx, *, arg):
+    msg = arg
+    try:
+        msg = msg.split()
+        msg = msg[0]
+    except:
+        pass
+
+    try:
+        num = eval_expression(msg)
+    except:
+        return
+
+    await ctx.reply(num)
+
+@test.error
+async def test_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        await ctx.send('Error: Something went wrong.')
+
+
 #highscore command
 @bot.command()
 async def stats(ctx):
