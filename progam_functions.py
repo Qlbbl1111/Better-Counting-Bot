@@ -21,7 +21,9 @@ def joinguild(guild):
 
 
 def eval_expression(input_string):
-    code = compile(input_string, "<string>", "eval")
+    x = re.sub("\^", "**", input_string)
+
+    code = compile(x, "<string>", "eval")
     if code.co_names:
         raise NameError(f"Use of names not allowed")
     return eval(code, {"__builtins__": {}}, {})
