@@ -73,8 +73,11 @@ async def on_message(message):
     channel = bot.get_channel(_id)
     user = loaduser(message.guild.id)
     msg = message.content
-    msg = msg.split()
-    msg = msg[0]
+    try:
+        msg = msg.split()
+        msg = msg[0]
+    except:
+        pass
 
     #1. Check to see if it was sent by a human.
     if (message.author.bot):
