@@ -38,18 +38,22 @@ async def on_start():
 #creates guild settings
 @bot.event
 async def on_guild_join(guild):
-    joinguild(guild.id)
+    joinguild(guild.guild_id)
 
 #message
 @bot.event
 async def on_message_create(message):
     #set vars
-    checkfiles(message.guild.id)
-    currentnum = loadnumber(message.guild.id)
-    _id = getchannel(message.guild.id)
-    channel = bot.get_channel(_id)
-    user = loaduser(message.guild.id)
+    guild = message.guild_id
+    channelid = message.channel_id
     msg = message.content
+    channel = await bot._http.get_channel(int(channelid))
+    channel = interactions.Channel(**channel, _client=bot._http)
+    checkfiles(guild)
+    currentnum = loadnumber(guild)
+    _id = getchannel(guild)
+    user = loaduser(guild)
+
     try:
         msg = msg.split()
         msg = msg[0]
@@ -61,7 +65,7 @@ async def on_message_create(message):
         return
 
     #2. Check to see if it was sent in the right channel
-    if message.channel.id != _id:
+    if channelid != _id:
         return
 
     #3. Check to see if it is a number
@@ -73,27 +77,27 @@ async def on_message_create(message):
     #4. Check if the counting resarted
     #if they miscount at 0
     if currentnum == 0 and num != 1:
-        await message.add_reaction('\N{WARNING SIGN}')
+        await message.create_reaction('\N{WARNING SIGN}')
         await message.reply("First Number is 1", mention_author=False)
         return
     #if they correctly count at 0
     if currentnum == 0 and num == 1:
     #check if the number reached is bigger then the current highscore
-        with open(f'./guildfiles/{message.guild.id}.json', 'r') as f:
+        with open(f'./guildfiles/{guild}.json', 'r') as f:
             x = json.loads(f.read())
             y = x["highscore"]
             #update highscore and react yes
             if y < currentnum + 1:
-                updatehighscore(currentnum + 1, message.guild.id)
-                updatenumber(currentnum + 1, message.guild.id)
-                updateuser(message.author.id, message.guild.id)
-                await message.add_reaction('☑️')
+                updatehighscore(currentnum + 1, guild)
+                updatenumber(currentnum + 1, guild)
+                updateuser(message.author.id, guild)
+                await message.create_reaction('☑️')
                 return
             #react yes
             else:
-                updatenumber(currentnum + 1, message.guild.id)
-                updateuser(message.author.id, message.guild.id)
-                await message.add_reaction('✅')
+                updatenumber(currentnum + 1, guild)
+                updateuser(message.author.id, guild)
+                await message.create_reaction('✅')
                 return
 
     #5. Check to see if it was sent by the same user as last time
@@ -101,10 +105,10 @@ async def on_message_create(message):
         if currentnum == 0:
             pass
         else:
-            await message.add_reaction('❌')
-            updateuser(0, message.guild.id)
-            await channel.send(f"{message.author.mention} ruined it at {currentnum}! You can't count two numbers in a row! The next number is 1.")
-            updatenumber(0, message.guild.id)
+            await message.create_reaction('❌')
+            updateuser(0, guild)
+            await channel.send(f"<@{message.author.id}> ruined it at {currentnum}! You can't count two numbers in a row! The next number is 1.")
+            updatenumber(0, guild)
             return
     else:
         pass
@@ -112,39 +116,44 @@ async def on_message_create(message):
     #6. Check to see if the number sent is 1 more then the current number
     if num == currentnum + 1:
     #check if the number reached is bigger then the current highscore
-        with open(f'./guildfiles/{message.guild.id}.json', 'r') as f:
+        with open(f'./guildfiles/{guild}.json', 'r') as f:
             x = json.loads(f.read())
             y = x["highscore"]
             #update highscore and react yes
             if y < currentnum + 1:
-                updatehighscore(currentnum + 1, message.guild.id)
-                updatenumber(currentnum + 1, message.guild.id)
-                updateuser(message.author.id, message.guild.id)
-                await message.add_reaction('☑️')
+                updatehighscore(currentnum + 1, guild)
+                updatenumber(currentnum + 1, guild)
+                updateuser(message.author.id, guild)
+                await message.create_reaction('☑️')
                 return
             #react yes
             else:
-                updatenumber(currentnum + 1, message.guild.id)
-                updateuser(message.author.id, message.guild.id)
-                await message.add_reaction('✅')
+                updatenumber(currentnum + 1, guild)
+                updateuser(message.author.id, guild)
+                await message.create_reaction('✅')
                 return
     #not the right number
     else:
-        updateuser(0, message.guild.id)
-        await message.add_reaction('❌')
-        updateuser(0, message.guild.id)
-        await channel.send(f"{message.author.mention} ruined it at {currentnum}! WRONG NUMBER! The next number is 1.")
-        updatenumber(0, message.guild.id)
+        updateuser(0, guild)
+        await message.create_reaction('❌')
+        updateuser(0, guild)
+        await channel.send(f"<@{message.author.id}> ruined it at {currentnum}! WRONG NUMBER! The next number is 1.")
+        updatenumber(0, guild)
         return
 
 @bot.event
 async def on_message_delete(message):
-    checkfiles(message.guild.id)
-    currentnum = loadnumber(message.guild.id)
-    _id = getchannel(message.guild.id)
-    channel = bot.get_channel(_id)
-    user = loaduser(message.guild.id)
+    guild = message.guild_id
+    channelid = message.channel_id
     msg = message.content
+    channel = await bot._http.get_channel(int(channelid))
+    channel = interactions.Channel(**channel, _client=bot._http)
+    checkfiles(guild)
+    currentnum = loadnumber(guild)
+    _id = getchannel(guild)
+    user = loaduser(guild)
+    msg = message.content
+
     try:
         msg = msg.split()
         msg = msg[0]
@@ -154,7 +163,7 @@ async def on_message_delete(message):
     if (message.author.bot):
         return
 
-    if message.channel.id != _id:
+    if channelid != _id:
         return
 
     try:
@@ -162,32 +171,23 @@ async def on_message_delete(message):
     except:
         return
 
-    channel = bot.get_channel(_id)
-    msg = f'**{message.author.mention} deleted their count of {num}.**'
-    await channel.send(content=msg, embed=discord.Embed.from_dict(
-    {
-      "title": "The next number is:",
-      "color": 16777215,
-      "description": f"```{currentnum + 1}```",
-      "timestamp": "",
-      "author": {
-        "name": "",
-        "icon_url": ""
-      },
-      "image": {},
-      "thumbnail": {},
-      "footer": {},
-      "fields": []
-    }
-  ))
+    msg = f'**<@{message.author.id}> deleted their count of {num}.**'
+    await channel.send(content=msg, embeds=interactions.Embed(
+    title="The next number is:",
+    description=f"```{currentnum + 1}```",
+    color=16777215
+    )
+    )
+
+
 
 #WORKS
 
 #Commands
 @bot.command(description="Set the channel to count in.")
 async def channel(ctx: interactions.CommandContext):
-    guild=str(ctx.guild_id)
-    channel=str(ctx.channel_id)
+    guild=ctx.guild_id
+    channel=ctx.channel_id
     checkfiles(guild)
     updatechannelid(channel, guild)
 
@@ -278,7 +278,7 @@ async def on_message(message):
     #4. Check if the counting resarted
     #if they miscount at 0
     if currentnum == 0 and num != 1:
-        await message.add_reaction('\N{WARNING SIGN}')
+        await message.create_reaction('\N{WARNING SIGN}')
         await message.reply("First Number is 1", mention_author=False)
         return
     #if they correctly count at 0
@@ -292,13 +292,13 @@ async def on_message(message):
                 updatehighscore(currentnum + 1, message.guild.id)
                 updatenumber(currentnum + 1, message.guild.id)
                 updateuser(message.author.id, message.guild.id)
-                await message.add_reaction('☑️')
+                await message.create_reaction('☑️')
                 return
             #react yes
             else:
                 updatenumber(currentnum + 1, message.guild.id)
                 updateuser(message.author.id, message.guild.id)
-                await message.add_reaction('✅')
+                await message.create_reaction('✅')
                 return
 
     #5. Check to see if it was sent by the same user as last time
@@ -306,7 +306,7 @@ async def on_message(message):
         if currentnum == 0:
             pass
         else:
-            await message.add_reaction('❌')
+            await message.create_reaction('❌')
             updateuser(0, message.guild.id)
             await channel.send(f"{message.author.mention} ruined it at {currentnum}! You can't count two numbers in a row! The next number is 1.")
             updatenumber(0, message.guild.id)
@@ -325,18 +325,18 @@ async def on_message(message):
                 updatehighscore(currentnum + 1, message.guild.id)
                 updatenumber(currentnum + 1, message.guild.id)
                 updateuser(message.author.id, message.guild.id)
-                await message.add_reaction('☑️')
+                await message.create_reaction('☑️')
                 return
             #react yes
             else:
                 updatenumber(currentnum + 1, message.guild.id)
                 updateuser(message.author.id, message.guild.id)
-                await message.add_reaction('✅')
+                await message.create_reaction('✅')
                 return
     #not the right number
     else:
         updateuser(0, message.guild.id)
-        await message.add_reaction('❌')
+        await message.create_reaction('❌')
         updateuser(0, message.guild.id)
         await channel.send(f"{message.author.mention} ruined it at {currentnum}! WRONG NUMBER! The next number is 1.")
         updatenumber(0, message.guild.id)

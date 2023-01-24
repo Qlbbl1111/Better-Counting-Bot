@@ -3,6 +3,7 @@ from datetime import datetime
 import math
 
 def checkfiles(guild):
+    guild = int(guild)
     if os.path.isdir(f'./guildfiles/{guild}.json') == True:
         return
     else:
@@ -13,6 +14,7 @@ def diff_dates(date1, date2):
     return abs(date2-date1).days
 
 def joinguild(guild):
+    guild = int(guild)
     if os.path.exists(f'./guildfiles/{guild}.json') == True:
         return
     else:
@@ -28,7 +30,8 @@ def eval_expression(input_string):
         raise NameError(f"Use of names not allowed")
     return eval(code, {"__builtins__": {}}, {})
 
-def updatehighscore(score, guild):
+def updatehighscore(score: str, guild: int):
+    guild = int(guild)
     highscoredate(guild)
     with open(f'./guildfiles/{guild}.json', 'r') as f:
         x = json.loads(f.read())
@@ -37,7 +40,8 @@ def updatehighscore(score, guild):
     with open(f'./guildfiles/{guild}.json', 'w') as f:
         f.write(y)
 
-def highscoredate(guild):
+def highscoredate(guild: int):
+    guild = int(guild)
     _today = datetime.today()
     _today= datetime.strftime(_today, '%b-%d-%Y')
     with open(f'./guildfiles/{guild}.json', 'r') as f:
@@ -47,7 +51,9 @@ def highscoredate(guild):
     with open(f'./guildfiles/{guild}.json', 'w') as f:
         f.write(y)
 
-def updatechannelid(channelid, guild):
+def updatechannelid(channelid: int, guild: int):
+    guild = int(guild)
+    channelid = int(channelid)
     with open(f'./guildfiles/{guild}.json', 'r') as f:
         x = json.loads(f.read())
         x.update({"channel": channelid})
@@ -55,7 +61,8 @@ def updatechannelid(channelid, guild):
     with open(f'./guildfiles/{guild}.json', 'w') as f:
         f.write(y)
 
-def loaddate(guild):
+def loaddate(guild: int):
+    guild = int(guild)
     with open(f'./guildfiles/{guild}.json', 'r') as f:
         x = json.loads(f.read())
         y = x["date"]
@@ -73,19 +80,22 @@ def loaddate(guild):
         z = f"{days} days ago on {date}"
     return z
 
-def loadnumber(guild):
+def loadnumber(guild: int):
+    guild = int(guild)
     with open(f'./guildfiles/{guild}.json', 'r') as f:
         x = json.loads(f.read())
         y = x["currentnum"]
         return y
 
-def loaduser(guild):
+def loaduser(guild: int):
+    guild = int(guild)
     with open(f'./guildfiles/{guild}.json', 'r') as f:
         x = json.loads(f.read())
         y = x["currentuser"]
         return y
 
-def updatenumber(number, guild):
+def updatenumber(number: int, guild: int):
+    guild = int(guild)
     with open(f'./guildfiles/{guild}.json', 'r') as f:
         x = json.loads(f.read())
         x.update({"currentnum": number})
@@ -93,7 +103,9 @@ def updatenumber(number, guild):
     with open(f'./guildfiles/{guild}.json', 'w') as f:
         f.write(y)
 
-def updateuser(user, guild):
+def updateuser(user: int, guild: int):
+    guild = int(guild)
+    user = int(user)
     with open(f'./guildfiles/{guild}.json', 'r') as f:
         x = json.loads(f.read())
         x.update({"currentuser": user})
@@ -101,14 +113,16 @@ def updateuser(user, guild):
     with open(f'./guildfiles/{guild}.json', 'w') as f:
         f.write(y)
 
-def getchannel(guild):
+def getchannel(guild: int):
+    guild = int(guild)
     with open(f'./guildfiles/{guild}.json', 'r') as f:
         x = json.loads(f.read())
         y = x["channel"]
         return y
 
 
-def getguild():
+def getguild(guild: int):
+    guild = int(guild)
     with open(f'./guildfiles/{guild}.json', 'r') as f:
         x = json.loads(f.read())
         y = x["id"]
