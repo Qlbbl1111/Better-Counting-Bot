@@ -1,8 +1,9 @@
+import interactions
 from dotenv import load_dotenv
-import discord, json, os, logging, time, re, string, os.path
-from discord.ext import commands, tasks
+import json, os, logging, time, re, string, os.path
 from progam_functions import *
 from leaderboard import *
+
 
 #Program Variables
 dir = os.path.dirname(__file__)
@@ -15,10 +16,190 @@ if os.path.isdir('./guildfiles') != True:
 
 elif os.path.isdir('./leaderboard.json') != True:
     with open(f'./leaderboard.json', 'w') as f:
-        f.write("{}")
-        
+        f.write("{}")      
 else:
     pass
+
+guildID = 912937955327348806
+
+bot = interactions.Client(
+    token=os.environ.get("KEY"),
+    default_scope=guildID,
+    intents=interactions.Intents.DEFAULT | interactions.Intents.GUILD_MESSAGE_CONTENT,
+    encoding="json"
+    )
+
+
+#EVENTS
+@bot.event()
+async def on_start():
+    print(bot.me.name,"Started.")
+
+#creates guild settings
+@bot.event
+async def on_guild_join(guild):
+    joinguild(guild.id)
+
+#message
+@bot.event
+async def on_message_create(message):
+    #set vars
+    checkfiles(message.guild.id)
+    currentnum = loadnumber(message.guild.id)
+    _id = getchannel(message.guild.id)
+    channel = bot.get_channel(_id)
+    user = loaduser(message.guild.id)
+    msg = message.content
+    try:
+        msg = msg.split()
+        msg = msg[0]
+    except:
+        pass
+
+    #1. Check to see if it was sent by a human.
+    if (message.author.bot):
+        return
+
+    #2. Check to see if it was sent in the right channel
+    if message.channel.id != _id:
+        return
+
+    #3. Check to see if it is a number
+    try:
+        num = eval_expression(msg)
+    except:
+        return
+
+    #4. Check if the counting resarted
+    #if they miscount at 0
+    if currentnum == 0 and num != 1:
+        await message.add_reaction('\N{WARNING SIGN}')
+        await message.reply("First Number is 1", mention_author=False)
+        return
+    #if they correctly count at 0
+    if currentnum == 0 and num == 1:
+    #check if the number reached is bigger then the current highscore
+        with open(f'./guildfiles/{message.guild.id}.json', 'r') as f:
+            x = json.loads(f.read())
+            y = x["highscore"]
+            #update highscore and react yes
+            if y < currentnum + 1:
+                updatehighscore(currentnum + 1, message.guild.id)
+                updatenumber(currentnum + 1, message.guild.id)
+                updateuser(message.author.id, message.guild.id)
+                await message.add_reaction('☑️')
+                return
+            #react yes
+            else:
+                updatenumber(currentnum + 1, message.guild.id)
+                updateuser(message.author.id, message.guild.id)
+                await message.add_reaction('✅')
+                return
+
+    #5. Check to see if it was sent by the same user as last time
+    if message.author.id == user:
+        if currentnum == 0:
+            pass
+        else:
+            await message.add_reaction('❌')
+            updateuser(0, message.guild.id)
+            await channel.send(f"{message.author.mention} ruined it at {currentnum}! You can't count two numbers in a row! The next number is 1.")
+            updatenumber(0, message.guild.id)
+            return
+    else:
+        pass
+
+    #6. Check to see if the number sent is 1 more then the current number
+    if num == currentnum + 1:
+    #check if the number reached is bigger then the current highscore
+        with open(f'./guildfiles/{message.guild.id}.json', 'r') as f:
+            x = json.loads(f.read())
+            y = x["highscore"]
+            #update highscore and react yes
+            if y < currentnum + 1:
+                updatehighscore(currentnum + 1, message.guild.id)
+                updatenumber(currentnum + 1, message.guild.id)
+                updateuser(message.author.id, message.guild.id)
+                await message.add_reaction('☑️')
+                return
+            #react yes
+            else:
+                updatenumber(currentnum + 1, message.guild.id)
+                updateuser(message.author.id, message.guild.id)
+                await message.add_reaction('✅')
+                return
+    #not the right number
+    else:
+        updateuser(0, message.guild.id)
+        await message.add_reaction('❌')
+        updateuser(0, message.guild.id)
+        await channel.send(f"{message.author.mention} ruined it at {currentnum}! WRONG NUMBER! The next number is 1.")
+        updatenumber(0, message.guild.id)
+        return
+
+@bot.event
+async def on_message_delete(message):
+    checkfiles(message.guild.id)
+    currentnum = loadnumber(message.guild.id)
+    _id = getchannel(message.guild.id)
+    channel = bot.get_channel(_id)
+    user = loaduser(message.guild.id)
+    msg = message.content
+    try:
+        msg = msg.split()
+        msg = msg[0]
+    except:
+        pass
+
+    if (message.author.bot):
+        return
+
+    if message.channel.id != _id:
+        return
+
+    try:
+        num = eval_expression(msg)
+    except:
+        return
+
+    channel = bot.get_channel(_id)
+    msg = f'**{message.author.mention} deleted their count of {num}.**'
+    await channel.send(content=msg, embed=discord.Embed.from_dict(
+    {
+      "title": "The next number is:",
+      "color": 16777215,
+      "description": f"```{currentnum + 1}```",
+      "timestamp": "",
+      "author": {
+        "name": "",
+        "icon_url": ""
+      },
+      "image": {},
+      "thumbnail": {},
+      "footer": {},
+      "fields": []
+    }
+  ))
+
+#WORKS
+
+#Commands
+@bot.command(description="Set the channel to count in.")
+async def channel(ctx: interactions.CommandContext):
+    guild=str(ctx.guild_id)
+    channel=str(ctx.channel_id)
+    checkfiles(guild)
+    updatechannelid(channel, guild)
+
+    await ctx.send(content=None, embeds=interactions.Embed(
+    title="Updated Counting Channel",
+    description=f"Counting now happens in <#{channel}>.",
+    color=0
+    )
+    )
+
+
+'''
 # Discord Variables
 activity = discord.Activity(type=discord.ActivityType.listening, name="+help")
 author_id = "892999941146963969"
@@ -61,6 +242,7 @@ async def on_guild_join(guild):
 @bot.event
 async def on_guild_remove(guild):
     pass
+
 
 
 #Message respond event
@@ -226,42 +408,20 @@ async def help(ctx):
       "footer": {},
       "fields": [
         {
-          "name": f"{prefix}help",
+          "name": f"/help",
           "value": "Used to bring up this menu."
         },
         {
-          "name": f"{prefix}channel",
+          "name": f"/channel",
           "value": "Used to set the channel to count in."
         },
         {
-          "name": f"{prefix}stats",
+          "name": f"/stats",
           "value": "Used to view your guilds stats."
         }
       ]
     }
   ))
-
-#test command
-@bot.command()
-async def test(ctx, *, arg):
-    msg = arg
-    try:
-        msg = msg.split()
-        msg = msg[0]
-    except:
-        pass
-
-    try:
-        num = eval_expression(msg)
-    except:
-        return
-
-    await ctx.reply(num)
-
-@test.error
-async def test_error(ctx, error):
-    if isinstance(error, commands.BadArgument):
-        await ctx.send('Error: Something went wrong.')
 
 
 #highscore command
@@ -337,27 +497,8 @@ async def channel(ctx, channel: discord.TextChannel=None):
     }
   ))
 
-@channel.error
-async def channel_error(ctx, error):
-    if isinstance(error, commands.BadArgument):
-        await ctx.send(content=None, embed=discord.Embed.from_dict(
-    {
-      "title": "Error: BadArgument",
-      "color": 0,
-      "description": "Command format is: +channel #<the channel you want to count in>",
-      "timestamp": "",
-      "author": {
-        "name": "",
-        "icon_url": ""
-      },
-      "image": {},
-      "thumbnail": {},
-      "footer": {},
-      "fields": []
-    }
-  ))
- 
+ '''
 
 #RUN
 if __name__ == "__main__":
-    bot.run(os.environ.get("KEY"))
+    bot.start()
