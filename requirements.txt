@@ -1,9 +1,0 @@
-discord-py-interactions
-json
-os
-logging
-time
-re
-string
-os.path
-dotenv
